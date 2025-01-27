@@ -1,0 +1,57 @@
+service: tum-paper-scraper
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: eu-central-1
+  memorySize: 1024
+  timeout: 900
+  environment:
+    SUPABASE_URL: ${env:SUPABASE_URL}
+    SUPABASE_KEY: ${env:SUPABASE_KEY}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'INFO'}
+    SCORE_THRESHOLD: ${env:SCORE_THRESHOLD, '7.0'}
+    SLACK_ENABLED: ${env:SLACK_ENABLED, 'false'}
+    SLACK_WEBHOOK_URL: ${env:SLACK_WEBHOOK_URL, ''}
+    EMAIL_ENABLED: ${env:EMAIL_ENABLED, 'false'}
+    SMTP_SERVER: ${env:SMTP_SERVER, ''}
+    SMTP_PORT: ${env:SMTP_PORT, '587'}
+    SMTP_USER: ${env:SMTP_USER, ''}
+    SMTP_PASSWORD: ${env:SMTP_PASSWORD, ''}
+    FROM_EMAIL: ${env:FROM_EMAIL, ''}
+    TO_EMAIL: ${env:TO_EMAIL, ''}
+
+functions:
+  scrape:
+    handler: src/lambda_handler.handler
+    events:
+      - schedule: cron(0 0 ? * MON *)
+    timeout: 900
+    memorySize: 1024
+    vpc:
+      securityGroupIds:
+        - sg-xxxxxxxxxxxxxx
+      subnetIds:
+        - subnet-xxxxxxxxxxxxxx
+
+package:
+  patterns:
+    - '!venv/**'
+    - '!.env*'
+    - '!.git/**'
+    - '!tests/**'
+    - '!README.md'
+    - '!deploy.sh'
+    - 'src/**'
+    - 'requirements.txt'
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    layer:
+      name: python-deps
+      description: Python dependencies for TUM Paper Scraper 
